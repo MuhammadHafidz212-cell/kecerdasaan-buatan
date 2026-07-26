@@ -1,0 +1,181 @@
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+
+print("Library berhasil diimport.")
+
+courses = [
+    ("AI", "DosenA"), ("ML", "DosenB"), ("DB", "DosenC"), ("CN", "DosenD"),
+    ("SE", "DosenE"), ("OS", "DosenF"), ("IR", "DosenA"), ("NLP", "DosenB"),
+    ("CV", "DosenC"), ("IOT", "DosenD"), ("HCI", "DosenE"), ("CyberSec", "DosenF"),
+    ("BigData", "DosenA"), ("DL", "DosenB"), ("NOSQL", "DosenC"), ("Cloud", "DosenD"),
+    ("UX", "DosenE"), ("SecEng", "DosenF"), ("Agile", "DosenA"), ("RL", "DosenB"),
+    ("ETL", "DosenC"), ("DevOps", "DosenD"), ("Blockchain", "DosenE"), ("GameDev", "DosenF")
+]
+
+rooms = ["R1", "R2", "R3", "R4"]
+
+timeslots = [
+    "Senin-08", "Senin-10", "Senin-13",
+    "Selasa-08", "Selasa-10", "Selasa-13",
+    "Rabu-08", "Rabu-10", "Rabu-13",
+    "Kamis-08", "Kamis-10", "Kamis-13"
+]
+
+N_COURSES = len(courses)
+N_ROOMS = len(rooms)
+N_TIMESLOTS = len(timeslots)
+
+print(f"Jumlah Mata Kuliah: {N_COURSES}")
+print(f"Jumlah Ruangan: {N_ROOMS} -> {rooms}")
+print(f"Jumlah Slot Waktu: {N_TIMESLOTS} -> {timeslots}")
+
+POP_SIZE = 60
+MAX_GEN = 100
+CROSSOVER_RATE = 0.85
+MUTATION_RATE = 0.20
+
+print("Parameter Algoritma Genetika berhasil ditetapkan.")
+
+def get_day(timeslot_idx):
+    return timeslots[timeslot_idx].split('-')[0]
+
+def create_individual():
+    return [(random.randint(0, N_ROOMS-1), random.randint(0, N_TIMESLOTS-1)) for _ in range(N_COURSES)]
+
+print("Helper functions siap digunakan.")
+
+def calculate_fitness(individual):
+    conflicts = 0
+
+    for i in range(N_COURSES):
+        for j in range(i + 1, N_COURSES):
+            room_i, time_i = individual[i]
+            room_j, time_j = individual[j]
+
+            # a. Konflik Ruang
+            if room_i == room_j and time_i == time_j:
+                conflicts += 1
+
+            # b. Konflik Dosen-Waktu
+            if courses[i][1] == courses[j][1] and time_i == time_j:
+                conflicts += 1
+
+            # c. Konflik Dosen-Hari
+            if courses[i][1] == courses[j][1]:
+                day_i = get_day(time_i)
+                day_j = get_day(time_j)
+                if day_i == day_j:
+                    conflicts += 1
+
+    fitness = 100 / (1 + conflicts)
+    return fitness, conflicts
+
+print("Fungsi fitness berhasil didefinisikan.")
+
+def selection(population, fitnesses, tournament_size=3):
+    selected = []
+    for _ in range(len(population)):
+        tournament_indices = random.sample(range(len(population)), tournament_size)
+        best_idx = max(tournament_indices, key=lambda i: fitnesses[i])
+        selected.append(population[best_idx][:])
+    return selected
+
+def crossover(parent1, parent2):
+    if random.random() < CROSSOVER_RATE:
+        point = random.randint(1, N_COURSES - 1)
+        child1 = parent1[:point] + parent2[point:]
+        child2 = parent2[:point] + parent1[point:]
+        return child1, child2
+    return parent1[:], parent2[:]
+
+def mutate(individual):
+    for i in range(N_COURSES):
+        if random.random() < MUTATION_RATE:
+            gene = list(individual[i])
+            if random.random() < 0.5:
+                gene[0] = random.randint(0, N_ROOMS - 1)
+            else:
+                gene[1] = random.randint(0, N_TIMESLOTS - 1)
+            individual[i] = tuple(gene)
+    return individual
+
+print("Operator genetika (seleksi, crossover, mutasi) berhasil didefinisikan.")
+
+population = [create_individual() for _ in range(POP_SIZE)]
+print(f"Populasi awal berhasil dibuat dengan {len(population)} individu.")
+print(f"Contoh individu pertama: {population[0][:3]}... (3 gen pertama)")
+
+best_fitness_per_gen = []
+avg_fitness_per_gen = []
+best_individual = None
+best_fitness = 0
+best_conflicts = float('inf')
+
+for gen in range(MAX_GEN):
+    fitnesses = []
+    conflicts_list = []
+    for ind in population:
+        f, c = calculate_fitness(ind)
+        fitnesses.append(f)
+        conflicts_list.append(c)
+
+    max_f = max(fitnesses)
+    avg_f = sum(fitnesses) / len(fitnesses)
+    best_fitness_per_gen.append(max_f)
+    avg_fitness_per_gen.append(avg_f)
+
+    for i, f in enumerate(fitnesses):
+        if f > best_fitness or (f == best_fitness and conflicts_list[i] < best_conflicts):
+            best_fitness = f
+            best_conflicts = conflicts_list[i]
+            best_individual = [g[:] for g in population[i]]
+
+    print(f"Gen [{gen+1:3d}]: Max Fitness = {max_f:.4f} | Avg Fitness = {avg_f:.4f}")
+
+    selected = selection(population, fitnesses)
+
+    new_population = []
+    for i in range(0, POP_SIZE, 2):
+        p1 = selected[i]
+        p2 = selected[i + 1] if i + 1 < POP_SIZE else selected[0]
+        c1, c2 = crossover(p1, p2)
+        new_population.append(c1)
+        new_population.append(c2)
+
+    population = [mutate(ind) for ind in new_population]
+
+print("\n" + "="*60)
+print("EVOLUSI SELESAI!")
+
+print("="*60)
+print("HASIL EVALUASI AKHIR")
+print("="*60)
+print(f"Fitness Terbaik: {best_fitness:.4f}")
+print(f"Jumlah Konflik Tersisa: {best_conflicts}")
+
+print("="*90)
+print("JADWAL TERBAIK - PENJADWALAN MATA KULIAH")
+print("="*90)
+header = f'{"No":<4} {"Mata Kuliah":<15} {"Waktu":<18} {"Ruangan":<10} {"Dosen":<10} {"Hari"}'
+print(header)
+print("-"*90)
+for i, (room_idx, time_idx) in enumerate(best_individual):
+    mk, dosen = courses[i]
+    waktu = timeslots[time_idx]
+    hari = waktu.split("-")[0]
+    print(f"{i+1:<4} {mk:<15} {waktu:<18} {rooms[room_idx]:<10} {dosen:<10} {hari}")
+print("="*90)
+
+plt.figure(figsize=(12, 6))
+plt.plot(range(1, MAX_GEN + 1), best_fitness_per_gen, 'b-', label='Fitness Maksimum', linewidth=2)
+plt.plot(range(1, MAX_GEN + 1), avg_fitness_per_gen, 'r--', label='Fitness Rata-rata', linewidth=2)
+plt.title('Perkembangan Fitness - Algoritma Genetika Penjadwalan Mata Kuliah', fontsize=14, fontweight='bold')
+plt.xlabel('Generasi', fontsize=12)
+plt.ylabel('Nilai Fitness', fontsize=12)
+plt.legend(fontsize=11)
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('grafik_fitness.png', dpi=150)
+plt.show()
+print("Grafik berhasil disimpan sebagai grafik_fitness.png")

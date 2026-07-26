@@ -3,7 +3,7 @@
 **Nama:** Muhammad Hafis  
 **NIM:** 24146028  
 **Mata Kuliah:** Kecerdasan Buatan (SIF210)  
-**Dosen:** [Nama Dosen]
+
 
 ---
 

@@ -1,6 +1,6 @@
 ﻿# UAS Kecerdasan Buatan (SIF210) - Penjadwalan Otomatis Mata Kuliah Menggunakan Algoritma Genetika
 
-**Nama:** Muhammad Hafis  
+**Nama:** Muhammad Hafidz  
 **NIM:** 24146028  
 **Mata Kuliah:** Kecerdasan Buatan (SIF210)  
 
